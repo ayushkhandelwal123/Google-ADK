@@ -41,6 +41,7 @@ root_agent = Agent(
     model=LiteLlm(
         model="groq/openai/gpt-oss-120b",
         llm_client=RetryingLiteLLMClient(),
+        include_reasoning=False,
     ),
     name='root_agent',
     description='A helpful assistant for user questions.',

@@ -19,6 +19,8 @@ Each agent reads credentials from its own `.env` (`GOOGLE_API_KEY`, `GROQ_API_KE
 
 Windows Smart App Control is on for this machine and blocks unsigned native extensions. `xxhash` (pulled in by `langchain-core` → `langsmith`) is blocked, so **LangChain tools cannot be used**. Write tools as plain Python functions instead (see `tavily_search_agent/agent.py`, which calls Tavily's REST API with `httpx`).
 
+Windows has no system time-zone database, so `zoneinfo` (used by `world_clock_agent`) needs the `tzdata` package installed in `.venv`. Without it every `ZoneInfo(...)` raises `ZoneInfoNotFoundError`.
+
 ## Running agents
 
 Run ADK CLI commands from the workspace root (`d:\AI\Google-ADK`), passing the agent directory name:
@@ -47,6 +49,6 @@ To add a new agent, create a sibling directory with the same pieces (`__init__.p
 
 Code shared between agents lives in `common/`, which agents import as `from common.<module> import ...` (ADK puts the workspace root on `sys.path`). `common/` must **not** contain an `__init__.py` or `agent.py`: ADK lists any directory with either file as an agent in `adk web`.
 
-Groq models are wrapped as `LiteLlm(model="groq/...", llm_client=RetryingLiteLLMClient())` (from `common/retry_llm_client.py`). It retries rate-limit (429) errors with exponential backoff and full jitter, or waits for the provider's `Retry-After` header when one is sent.
+Groq models are wrapped as `LiteLlm(model="groq/...", llm_client=RetryingLiteLLMClient(), include_reasoning=False)`. `include_reasoning=False` is passed through to Groq so gpt-oss doesn't return its reasoning; without it, `adk run` prints the reasoning as part of every reply. `RetryingLiteLLMClient` (from `common/retry_llm_client.py`) retries rate-limit (429) errors with exponential backoff and full jitter, or waits for the provider's `Retry-After` header when one is sent.
 
 Tools are passed as `tools=[...]` on the `Agent`. A plain function becomes a tool automatically; ADK builds the tool schema from its type hints and docstring, so keep both accurate.
