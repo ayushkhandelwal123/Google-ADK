@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-A Google Agent Development Kit (ADK) workspace (`google-adk` 2.14.1, `google-genai` 2.34.0). Each top-level subdirectory (other than `.venv` and `common/`) is an independent ADK agent package. Agents use either Gemini directly (`model='gemini-...'`) or Groq through `LiteLlm(model="groq/...")`. There are no tests, linters, or dependency manifests (packages are installed directly into `.venv`).
+A Google Agent Development Kit (ADK) workspace (`google-adk` 2.14.1, `google-genai` 2.34.0). Each top-level subdirectory (other than `.venv` and `common/`) is an independent ADK agent package. Agents use either Gemini directly (`model='gemini-...'`) or Groq through `LiteLlm(model="groq/...")`. Dependencies are pinned in `requirements.txt` (direct dependencies only; `pip install -r requirements.txt` into `.venv`). There are no tests or linters.
 
 ## Environment
 
