@@ -1,6 +1,6 @@
 # Google ADK Agents
 
-A collection of small agents built with Google's [Agent Development Kit (ADK)](https://google.github.io/adk-docs/). Most of them run on Groq's `openai/gpt-oss-120b` model through LiteLLM; one uses Gemini with Google Search.
+A collection of small agents built with Google's [Agent Development Kit (ADK)](https://google.github.io/adk-docs/). Most of them run on Groq's `openai/gpt-oss-120b` model through LiteLLM; two use Gemini with Google Search.
 
 ## Agents
 
@@ -11,12 +11,15 @@ A collection of small agents built with Google's [Agent Development Kit (ADK)](h
 | `tavily_search_agent` | Groq `gpt-oss-120b` | `tavily_search` | Answers questions using Tavily web search, citing sources |
 | `world_clock_agent` | Groq `gpt-oss-120b` | `get_current_time` | Tells the current time and date anywhere in the world |
 | `combined_agent` | Groq `gpt-oss-120b` | `tavily_search`, `get_current_time` | Web search and world clock in one agent |
+| `mcp_agent` | Gemini `gemini-3.5-flash` | filesystem MCP server, `google_search` | Reads, writes, edits and organises files in `mcp_agent/files/`, and can research topics with Google Search and save the results there |
 
 All Groq agents share `common/retry_llm_client.py`, which retries rate-limit (HTTP 429) errors with exponential backoff and jitter, and they hide gpt-oss's reasoning text from replies.
 
+`mcp_agent` connects to the official [filesystem MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem), which it starts with `npx`. The server can only access `mcp_agent/files/` (created automatically and not committed), and has no delete tool. The agent's instruction includes today's date, so searches for "this week's news" return current results instead of ones from the model's training period.
+
 ## Setup
 
-Requires Python 3.13 (the version this was built and tested with).
+Requires Python 3.13 (the version this was built and tested with). `mcp_agent` also needs [Node.js](https://nodejs.org/) so that `npx` is available; the first run downloads the filesystem server from npm.
 
 ```bash
 python -m venv .venv
@@ -37,7 +40,9 @@ cp tavily_search_agent/.env.example tavily_search_agent/.env
 |---|---|---|
 | `GROQ_API_KEY` | all Groq agents | https://console.groq.com/keys |
 | `TAVILY_API_KEY` | `tavily_search_agent`, `combined_agent` | https://app.tavily.com |
-| `GOOGLE_API_KEY` | `google_agent` | https://aistudio.google.com/apikey |
+| `GOOGLE_API_KEY` | `google_agent`, `mcp_agent` | https://aistudio.google.com/apikey |
+
+Google Search and Gemini calls are billed to your Google AI Studio account. If they fail with `402 RESOURCE_EXHAUSTED`, the account's prepaid credits have run out.
 
 ## Running
 

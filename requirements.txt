@@ -4,3 +4,4 @@ google-genai==2.34.0
 litellm==1.109.1      # Groq models via LiteLlm
 httpx==0.28.1         # Tavily REST calls in tavily_search_agent
 tzdata==2026.6        # time-zone data for zoneinfo on Windows (world_clock_agent)
+mcp==2.3.0            # MCP client for mcp_agent
