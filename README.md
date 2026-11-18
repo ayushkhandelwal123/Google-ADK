@@ -1,6 +1,6 @@
 # Google ADK Agents
 
-A collection of small agents built with Google's [Agent Development Kit (ADK)](https://google.github.io/adk-docs/). Most of them run on Groq's `openai/gpt-oss-120b` model through LiteLLM; two use Gemini with Google Search.
+A collection of small agents built with Google's [Agent Development Kit (ADK)](https://google.github.io/adk-docs/). Most of them run on Groq's `openai/gpt-oss-120b` model through LiteLLM; the rest use Gemini.
 
 ## Agents
 
@@ -12,14 +12,22 @@ A collection of small agents built with Google's [Agent Development Kit (ADK)](h
 | `world_clock_agent` | Groq `gpt-oss-120b` | `get_current_time` | Tells the current time and date anywhere in the world |
 | `combined_agent` | Groq `gpt-oss-120b` | `tavily_search`, `get_current_time` | Web search and world clock in one agent |
 | `mcp_agent` | Gemini `gemini-3.5-flash` | filesystem MCP server, `google_search` | Reads, writes, edits and organises files in `mcp_agent/files/`, and can research topics with Google Search and save the results there |
+| `coding_agent` | Gemini `gemini-3.5-flash` | filesystem MCP server, local shell MCP server, GitHub MCP server (optional) | Builds and fixes small Python projects in `coding_agent/workspace/`: edits files, runs tests, runs the app, and can push code and open pull requests on GitHub |
 
 All Groq agents share `common/retry_llm_client.py`, which retries rate-limit (HTTP 429) errors with exponential backoff and jitter, and they hide gpt-oss's reasoning text from replies.
 
 `mcp_agent` connects to the official [filesystem MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem), which it starts with `npx`. The server can only access `mcp_agent/files/` (created automatically and not committed), and has no delete tool. The agent's instruction includes today's date, so searches for "this week's news" return current results instead of ones from the model's training period.
 
+`coding_agent` combines three MCP servers:
+- **Files:** the same filesystem server, limited to its workspace folder (`coding_agent/workspace/` by default; set `WORKSPACE_DIR` in `.env` to change it). The folder is created automatically and is not committed, so each clone starts with an empty workspace.
+- **Shell:** `coding_agent/servers/shell_server.py`, a local server that runs only `python`, `pytest`, `pip` and `git` inside the workspace, with risky subcommands such as `git push` and `git reset` blocked. It can also start the app with uvicorn on http://127.0.0.1:8001 (port 8000 is used by `adk web`). Commands run with the same Python environment as the agent.
+- **GitHub:** GitHub's hosted MCP server, added only when `GITHUB_PAT` is set. Reading repos, issues and pull requests runs freely; creating repos or branches, pushing files, opening pull requests and commenting on issues need your approval.
+
+Shell commands also need your approval, except `pytest`, `git status`, `git diff` and `git log`. Starting a server always needs approval.
+
 ## Setup
 
-Requires Python 3.13 (the version this was built and tested with). `mcp_agent` also needs [Node.js](https://nodejs.org/) so that `npx` is available; the first run downloads the filesystem server from npm.
+Requires Python 3.13 (the version this was built and tested with). `mcp_agent` and `coding_agent` also need [Node.js](https://nodejs.org/) so that `npx` is available; the first run downloads the filesystem server from npm.
 
 ```bash
 python -m venv .venv
@@ -40,7 +48,8 @@ cp tavily_search_agent/.env.example tavily_search_agent/.env
 |---|---|---|
 | `GROQ_API_KEY` | all Groq agents | https://console.groq.com/keys |
 | `TAVILY_API_KEY` | `tavily_search_agent`, `combined_agent` | https://app.tavily.com |
-| `GOOGLE_API_KEY` | `google_agent`, `mcp_agent` | https://aistudio.google.com/apikey |
+| `GOOGLE_API_KEY` | `google_agent`, `mcp_agent`, `coding_agent` | https://aistudio.google.com/apikey |
+| `GITHUB_PAT` (optional) | `coding_agent` | https://github.com/settings/tokens |
 
 Google Search and Gemini calls are billed to your Google AI Studio account. If they fail with `402 RESOURCE_EXHAUSTED`, the account's prepaid credits have run out.
 
