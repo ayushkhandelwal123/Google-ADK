@@ -13,6 +13,7 @@ A collection of small agents built with Google's [Agent Development Kit (ADK)](h
 | `combined_agent` | Groq `gpt-oss-120b` | `tavily_search`, `get_current_time` | Web search and world clock in one agent |
 | `mcp_agent` | Gemini `gemini-3.5-flash` | filesystem MCP server, `google_search` | Reads, writes, edits and organises files in `mcp_agent/files/`, and can research topics with Google Search and save the results there |
 | `coding_agent` | Gemini `gemini-3.5-flash` | filesystem MCP server, local shell MCP server, GitHub MCP server (optional) | Builds and fixes small Python projects in `coding_agent/workspace/`: edits files, runs tests, runs the app, and can push code and open pull requests on GitHub |
+| `structured_output_agent` | Gemini `gemini-3.5-flash` | none | Turns a customer support message into a structured ticket (category, priority, sentiment, summary, action items) using a Pydantic output schema |
 
 All Groq agents share `common/retry_llm_client.py`, which retries rate-limit (HTTP 429) errors with exponential backoff and jitter, and they hide gpt-oss's reasoning text from replies.
 
@@ -24,6 +25,8 @@ All Groq agents share `common/retry_llm_client.py`, which retries rate-limit (HT
 - **GitHub:** GitHub's hosted MCP server, added only when `GITHUB_PAT` is set. Reading repos, issues and pull requests runs freely; creating repos or branches, pushing files, opening pull requests and commenting on issues need your approval.
 
 Shell commands also need your approval, except `pytest`, `git status`, `git diff` and `git log`. Starting a server always needs approval.
+
+`structured_output_agent` shows how to get typed output from a model. It passes a Pydantic model (`SupportTicket`) as the agent's `output_schema`, so the model must reply with JSON matching it, and ADK validates the reply. `output_key="ticket"` also saves the result to session state for other agents or code to read. The `Field(description=...)` text on each field is sent to the model, so it guides the answer as much as the types do.
 
 ## Setup
 
@@ -48,7 +51,7 @@ cp tavily_search_agent/.env.example tavily_search_agent/.env
 |---|---|---|
 | `GROQ_API_KEY` | all Groq agents | https://console.groq.com/keys |
 | `TAVILY_API_KEY` | `tavily_search_agent`, `combined_agent` | https://app.tavily.com |
-| `GOOGLE_API_KEY` | `google_agent`, `mcp_agent`, `coding_agent` | https://aistudio.google.com/apikey |
+| `GOOGLE_API_KEY` | `google_agent`, `mcp_agent`, `coding_agent`, `structured_output_agent` | https://aistudio.google.com/apikey |
 | `GITHUB_PAT` (optional) | `coding_agent` | https://github.com/settings/tokens |
 
 Google Search and Gemini calls are billed to your Google AI Studio account. If they fail with `402 RESOURCE_EXHAUSTED`, the account's prepaid credits have run out.
